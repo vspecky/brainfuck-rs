@@ -1,6 +1,7 @@
-use std::vec::Vec;
 use std::io::Read;
+use std::io::Write;
 use std::path::Path;
+use std::vec::Vec;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -33,14 +34,14 @@ fn main() {
 
 // Main Brainfuck Struct
 struct Brainfuck {
-    mem: [u32; 30000],  // Memory. This interpreter follows the standard of 30k memory cells
-    mem_ptr: usize,     // Memory Pointer
-    prog: Vec<char>,    // Program file split into chars for easy reading
-    pc: u32,            // Program Counter
-    stack: Vec<u32>,    // Stack (for loops)
-    sp: i16,            // Stack Pointer
-    lin: u32,           // Line number of the current instruction (for debugging)
-    col: u32,           // Column number of the current instruction (for debugging)
+    mem: [u32; 30000], // Memory. This interpreter follows the standard of 30k memory cells
+    mem_ptr: usize,    // Memory Pointer
+    prog: Vec<char>,   // Program file split into chars for easy reading
+    pc: u32,           // Program Counter
+    stack: Vec<u32>,   // Stack (for loops)
+    sp: i16,           // Stack Pointer
+    lin: u32,          // Line number of the current instruction (for debugging)
+    col: u32,          // Column number of the current instruction (for debugging)
 }
 
 impl Brainfuck {
@@ -54,7 +55,7 @@ impl Brainfuck {
             stack: Vec::new(),
             sp: -1,
             lin: 1,
-            col: 1
+            col: 1,
         };
 
         out
@@ -124,8 +125,7 @@ impl Brainfuck {
     fn next_instruction(&mut self) -> Option<char> {
         while (self.pc as usize) < self.prog.len() {
             match self.prog[self.pc as usize] {
-                '<' | '>' | '+' | '-' |
-                '.' | ',' | '[' | ']' => {
+                '<' | '>' | '+' | '-' | '.' | ',' | '[' | ']' => {
                     let ch = self.prog[self.pc as usize];
                     self.pc += 1;
                     self.col += 1;
@@ -163,7 +163,6 @@ impl Brainfuck {
                 } else {
                     opening_brackets -= 1;
                 }
-
             } else if c == '[' {
                 opening_brackets += 1;
             }
@@ -179,7 +178,7 @@ impl Brainfuck {
         loop {
             let ins = match self.next_instruction() {
                 Some(ch) => ch,
-                None => break
+                None => break,
             };
 
             let status: Result<(), &'static str> = match ins {
@@ -264,6 +263,7 @@ impl Brainfuck {
                 '.' => {
                     if let Some(ch) = std::char::from_u32(self.read_cell()) {
                         print!("{}", ch);
+                        std::io::stdout().flush().unwrap();
                         Ok(())
                     } else {
                         Err("Could not print character")
@@ -274,16 +274,20 @@ impl Brainfuck {
                 // in the current cell
                 ',' => {
                     let mut ch = [0];
-                    std::io::stdin().read_exact(&mut ch).expect("Couldn't read from std");
+                    std::io::stdin()
+                        .read_exact(&mut ch)
+                        .expect("Couldn't read from std");
                     while ch[0] == '\n' as u8 {
-                        std::io::stdin().read_exact(&mut ch).expect("Couldn't read from std");
+                        std::io::stdin()
+                            .read_exact(&mut ch)
+                            .expect("Couldn't read from std");
                     }
 
                     self.write_to_cell(ch[0].into());
                     Ok(())
                 }
 
-                _ => Err("Unexpected instruction")
+                _ => Err("Unexpected instruction"),
             };
 
             if let Err(msg) = status {
